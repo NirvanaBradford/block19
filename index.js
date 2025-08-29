@@ -1,6 +1,6 @@
 // === Constants ===
 const BASE = "https://fsa-crud-2aa9294fe819.herokuapp.com/api";
-const COHORT = ""; // Make sure to change this!
+const COHORT = "/2506-ct-web-pt"; // Make sure to change this!
 const API = BASE + COHORT;
 
 // === State ===
@@ -17,7 +17,7 @@ async function getParties() {
     parties = result.data;
     render();
   } catch (e) {
-    console.error(e);
+    console.error("error/ coudn't fetch getParties");
   }
 }
 
@@ -29,7 +29,7 @@ async function getParty(id) {
     selectedParty = result.data;
     render();
   } catch (e) {
-    console.error(e);
+    console.error("error/ couldn't fetch getParty");
   }
 }
 
@@ -41,7 +41,7 @@ async function getRsvps() {
     rsvps = result.data;
     render();
   } catch (e) {
-    console.error(e);
+    console.error("error/ couldn't fetch getRsvps");
   }
 }
 
@@ -53,7 +53,32 @@ async function getGuests() {
     guests = result.data;
     render();
   } catch (e) {
-    console.error(e);
+    console.error("error/ coudn't fetch getGuests");
+  }
+}
+
+// Mutation Add a new event
+async function addEvent(eventObj) {
+  try {
+    await fetch(`${API}/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(eventObj),
+    });
+    await getParties();
+  } catch (error) {
+    console.error("error with /POST");
+  }
+}
+
+// Mutation delete a event
+async function deleteEvent(id) {
+  try {
+    await fetch(`${API}/events/${id}`, { method: "DELETE" });
+    selectedParty = null;
+    await getParties();
+  } catch (error) {
+    console.error("error with /DELETE");
   }
 }
 
@@ -128,6 +153,35 @@ function GuestList() {
   return $ul;
 }
 
+/** Form to add a new party */
+function newParty() {
+  const $form = document.createElement("form");
+  $form.innerHTML = `
+        <label>Name</label>
+        <input name="name" required />
+        <label>Description</label>
+        <input name="description" required />
+        <label>Date</label>
+        <input type="date" name="date" required />
+        <label>Location</label>
+        <input name="location" required />
+      <button> Add a new party </button>
+  `;
+  $form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData($form);
+    const date = new Date(data.get("date")).toISOString();
+    addEvent({
+      name: data.get("name"),
+      description: data.get("description"),
+      date,
+      location: data.get("location"),
+    });
+  });
+
+  return $form;
+}
+
 // === Render ===
 function render() {
   const $app = document.querySelector("#app");
@@ -137,15 +191,19 @@ function render() {
       <section>
         <h2>Upcoming Parties</h2>
         <PartyList></PartyList>
+        <h3> Add a new Party </h3>
+        <newParty></newParty>
       </section>
       <section id="selected">
         <h2>Party Details</h2>
         <SelectedParty></SelectedParty>
       </section>
+
     </main>
   `;
 
   $app.querySelector("PartyList").replaceWith(PartyList());
+  $app.querySelector("newParty").replaceWith(newParty());
   $app.querySelector("SelectedParty").replaceWith(SelectedParty());
 }
 
